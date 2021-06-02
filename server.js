@@ -25,11 +25,6 @@ io.on("connection", socket => {
     socket.on("answerCall", (data) => {
         io.to(data.to).emit("callAccepted", data.signal)
     })
-
-    socket.on("sendMessage", (data) => {
-        io.to(data.to).emit("sendMessage", data );
-    });
-
 })
 
 server.listen(5000, () => console.log("running on port 5000"))

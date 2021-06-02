@@ -1,7 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-.container {
-
-}
 
 .videochat__logo {
 	text-align: center;
@@ -20,6 +17,7 @@
 	display: flex;
 	justify-content: space-between;
 	margin-bottom: 20px;
+	flex-wrap: wrap;
 }
 
 
@@ -30,20 +28,15 @@
 	margin: 0 200px;
 	border-radius: 5px;
 	color: white;
-	/*fallback for old browsers */
-	background: rgb(57, 60, 67);
-	/* Chrome 10-25, Safari 5.1-6 */
 	
-	/*W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+	background: white;/*rgb(57, 60, 67);*/
+	
 	padding: 2rem;
 	display: grid;
 	justify-content: center;
 	align-content: center;
 }
 
-#filled-basic {
-
-}
 
 .call-button {
 	text-align: center;
@@ -63,5 +56,5 @@
 }
 
 body {
-	background: black;
+	background: white;
 }

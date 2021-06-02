@@ -12,13 +12,14 @@ import { BiVideoOff } from "react-icons/bi"
 import { MdScreenShare } from "react-icons/md"
 import { MdStopScreenShare } from "react-icons/md"
 
+import { BiFullscreen, BiExitFullscreen } from "react-icons/bi"
+
 
 
 import './App.css';
 import React, { useState, useEffect, useRef } from 'react'
 import Peer from "simple-peer"
 import io from "socket.io-client"
-import { LinkedCamera } from "@material-ui/icons"
 
 const socket = io.connect("http://localhost:5000")
 
@@ -32,10 +33,13 @@ function App() {
   const [idToCall, setIdToCall] = useState("")
   const [callEnded, setCallEnded] = useState(false)
   const [name, setName] = useState("")
-  const [muteIcon, setMuteIcon] = useState();
-  const [videoIcon, setVideoIcon] = useState();
-  const [shareIcon, setShareIcon] = useState();
 
+  const [muteIcon, setMuteIcon] = useState(<BiMicrophone />);
+  const [videoIcon, setVideoIcon] = useState(<BiVideo />);
+  const [shareIcon, setShareIcon] = useState(<MdScreenShare />);
+  const [fullScreenIcon, setFullScreenIcon] = useState(<BiFullscreen/>)
+
+  const [fullScreenMod, setFullScreen] = useState(false);
   const [myScreen, setShareScreen] = useState(false);
 
   const myVideo = useRef()
@@ -44,9 +48,6 @@ function App() {
 
 
   useEffect(() => {
-    setMuteIcon(<BiMicrophone />)
-    setVideoIcon(<BiVideo />)
-    setShareIcon(<MdScreenShare />)
     navigator.mediaDevices
       .getUserMedia({
         video: true,
@@ -77,6 +78,7 @@ function App() {
       trickle: false,
       stream: stream
     })
+
     peer.on("signal", (data) => {
       socket.emit("callUser", {
         userToCall: id,
@@ -87,20 +89,28 @@ function App() {
     })
     peer.on("stream", (stream) => {
       userVideo.current.srcObject = stream
-
     })
+
     socket.on("callAccepted", (signal) => {
       setCallAccepted(true)
       peer.signal(signal)
     })
 
     connectionRef.current = peer
+
+  }
+
+  const replaceStream = (newStream) => {
+    try {
+      if (stream.getVideoTracks().length > 0) {
+        connectionRef.current.replaceTrack(stream.getVideoTracks()[0], newStream.getVideoTracks()[0], stream);
+      }
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   const showScreen = async () => {
-
-
-
     if (!myScreen) {
       try {
         navigator.mediaDevices
@@ -111,35 +121,37 @@ function App() {
             audio: false
           })
           .then((newStream) => {
-           
-            myVideo.current.srcObject = newStream
-            
-
+            myVideo.current.srcObject = newStream;
+            connectionRef.current.addTrack(newStream.getVideoTracks()[0], stream);
+            replaceStream(newStream);
           })
-
-          
         setShareIcon(<MdStopScreenShare />)
 
       } catch (err) {
         console.log(err);
       }
-     
+
       setShareScreen(true)
     }
     else {
       try {
+
         navigator.mediaDevices
           .getUserMedia({
             video: true,
             audio: true
           })
           .then((newStream) => {
-            
-            myVideo.current.srcObject = newStream
+            myVideo.current.srcObject = newStream;
+            //  connectionRef.current.removeTrack(stream.getVideoTracks()[0], stream)
+            connectionRef.current.addTrack(newStream.getVideoTracks()[0], stream);
+            replaceStream(newStream);
+
+            setStream(newStream);
 
           })
 
-        
+
         setShareIcon(<MdScreenShare />)
       } catch (err) {
         console.log(err);
@@ -150,9 +162,7 @@ function App() {
 
   }
 
-  const fullScreen = () => {
 
-  }
 
   const answerCall = () => {
     setCallAccepted(true)
@@ -178,6 +188,26 @@ function App() {
   const leaveCall = () => {
     setCallEnded(true)
     connectionRef.current.destroy()
+  }
+
+  const fullScreen = () => {
+    navigator.mediaDevices
+      .getUserMedia({
+        video: true,
+        audio: true
+      })
+      .then((stream) => {
+        
+        myVideo.current.srcObject = stream
+
+      })
+    if (fullScreenMod) {
+      setFullScreenIcon(<BiFullscreen/>);
+    } 
+    else {
+      setFullScreenIcon(<BiExitFullscreen/>)
+    }
+    setFullScreen(!fullScreenMod);
   }
 
   const muteVideo = () => {
@@ -207,80 +237,104 @@ function App() {
 
 
 
-  return (
-    <>
+  if (!fullScreenMod) {
+    return (
+      <>
 
-      <h1 className="videochat__logo">Video chat</h1>
+        <h1 className="videochat__logo">Video chat</h1>
 
-      <div className="container">
-        <div className="video-container">
-          <div className="videochat">
-            <div className="video">
-              {stream && <video id="myVideoStream" playsInline ref={myVideo} muted autoPlay style={{ width: "400px" }} />}
+        <div className="container">
+          <div className="video-container">
+            <div className="videochat">
+              <div className="video">
+                {stream && <video id="myVideoStream" playsInline ref={myVideo} muted autoPlay style={{ width: "400px" }} />}
 
+              </div>
+              <div className="video">
+                {callAccepted && !callEnded ?
+                  <video playsInline ref={userVideo} autoPlay style={{ width: "400px" }} /> :
+                  null}
+              </div>
             </div>
-            <div className="video">
-              {callAccepted && !callEnded ?
-                <video playsInline ref={userVideo} autoPlay style={{ width: "400px" }} /> :
-                null}
+            <div className="buttons">
+              <Button variant="contained" color="default" ref={myVideo} onClick={muteVideo} startIcon={videoIcon}></Button>
+              <Button variant="contained" color="default" ref={myVideo} onClick={muteAudio} startIcon={muteIcon}></Button>
+              <Button variant="contained" color="default" ref={myVideo} onClick={showScreen} startIcon={shareIcon}></Button>
+              <Button variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button>
             </div>
           </div>
-          <div className="buttons">
-            <Button variant="contained" color="primary" ref={myVideo} onClick={muteVideo} startIcon={videoIcon}></Button>
-            <Button variant="contained" color="primary" ref={myVideo} onClick={muteAudio} startIcon={muteIcon}></Button>
-            <Button variant="contained" color="primary" ref={myVideo} onClick={showScreen} startIcon={shareIcon}></Button>
-          </div>
-        </div>
 
-        <div className="myId">
-          <TextField
-            id="filled-basic"
-            label="Name"
-            variant="filled"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={{ marginBottom: "20px" }}
-          />
-          <CopyToClipboard text={me} style={{ marginBottom: "2rem" }}>
-            <Button variant="contained" color="primary" startIcon={<AssignmentIcon fontSize="large" />}>
-              Copy ID
-					</Button>
-          </CopyToClipboard>
+          <div className="myId">
+            <TextField
+              id="filled-basic"
+              label="Name"
+              variant="filled"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{ marginBottom: "20px" }}
+            />
+            <CopyToClipboard text={me} style={{ marginBottom: "2rem" }}>
+              <Button variant="contained" color="default" startIcon={<AssignmentIcon fontSize="large" />}>
+                Copy ID
+				    	</Button>
+            </CopyToClipboard>
 
-          <TextField
-            id="filled-basic"
-            label="ID to call"
-            variant="filled"
-            value={idToCall}
-            onChange={(e) => setIdToCall(e.target.value)}
-          />
-          <div className="call-button">
-            {callAccepted && !callEnded ? (
-              <Button variant="contained" color="secondary" onClick={leaveCall}>
-                End Call
-              </Button>
-            ) : (
-              <IconButton color="primary" aria-label="call" onClick={() => callUser(idToCall)}>
-                <PhoneIcon fontSize="large" />
-              </IconButton>
-            )}
-            {idToCall}
+            <TextField
+              id="filled-basic"
+              label="ID to call"
+              variant="filled"
+              value={idToCall}
+              onChange={(e) => setIdToCall(e.target.value)}
+            />
+            <div className="call-button">
+              {callAccepted && !callEnded ? (
+                <Button variant="contained" color="default" onClick={leaveCall}>
+                  End Call
+                </Button>
+              ) : (
+                <IconButton color="default" aria-label="call" onClick={() => callUser(idToCall)}>
+                  <PhoneIcon fontSize="large" />
+                </IconButton>
+              )}
+              {idToCall}
+            </div>
           </div>
-        </div>
-        <div>
-          {receivingCall && !callAccepted ? (
-            <div className="caller">
-              <h1 >{name} is calling...</h1>
-              <Button variant="contained" color="primary" onClick={answerCall}>
-                Answer
+          <div>
+            {receivingCall && !callAccepted ? (
+              <div className="caller">
+                <h1 >{name} is calling...</h1>
+                <Button variant="contained" color="default" onClick={answerCall}>
+                  Answer
 						</Button>
-            </div>
-          ) : null}
-        </div>
+              </div>
+            ) : null}
+          </div>
 
-      </div>
-    </>
-  );
+        </div>
+      </>
+    );
+  }
+  else {
+    return (
+      <>
+        <div>
+          <div className="video">
+            {stream && <video id="myVideoStream" playsInline ref={myVideo} muted autoPlay style={{ width: "400px" }} />}
+
+          </div>
+          <div className="video">
+            {callAccepted && !callEnded ?
+              <video playsInline ref={userVideo} autoPlay style={{ width: "400px" }} /> :
+              null}
+          </div>
+          <Button variant="contained" color="default" ref={myVideo} onClick={muteVideo} startIcon={videoIcon}></Button>
+          <Button variant="contained" color="default" ref={myVideo} onClick={muteAudio} startIcon={muteIcon}></Button>
+          <Button variant="contained" color="default" ref={myVideo} onClick={showScreen} startIcon={shareIcon}></Button>
+          <Button variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button>
+        </div>
+      </>
+    );
+  }
 }
 
 export default App;
