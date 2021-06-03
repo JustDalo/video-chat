@@ -13,6 +13,10 @@
 	flex-direction: column;
 }
 
+#myVideoStream {
+	margin: 0 20px;
+}
+
 .videochat {
 	display: flex;
 	justify-content: space-between;
@@ -20,8 +24,14 @@
 	flex-wrap: wrap;
 }
 
+#control__btn {
+	margin: 0px 10px;
+	
+}
 
-
+.buttons {
+	margin: 0 10px;
+}
 .myId {
 	display: flex;
 	align-items: center;

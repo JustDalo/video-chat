@@ -37,7 +37,7 @@ function App() {
   const [muteIcon, setMuteIcon] = useState(<BiMicrophone />);
   const [videoIcon, setVideoIcon] = useState(<BiVideo />);
   const [shareIcon, setShareIcon] = useState(<MdScreenShare />);
-  const [fullScreenIcon, setFullScreenIcon] = useState(<BiFullscreen/>)
+  const [fullScreenIcon, setFullScreenIcon] = useState(<BiFullscreen />)
 
   const [fullScreenMod, setFullScreen] = useState(false);
   const [myScreen, setShareScreen] = useState(false);
@@ -122,8 +122,13 @@ function App() {
           })
           .then((newStream) => {
             myVideo.current.srcObject = newStream;
-            connectionRef.current.addTrack(newStream.getVideoTracks()[0], stream);
-            replaceStream(newStream);
+            if (connectionRef.current) {
+              connectionRef.current.addTrack(newStream.getVideoTracks()[0], stream);
+              replaceStream(newStream);
+            }
+            else {
+              setStream(newStream);
+            }
           })
         setShareIcon(<MdStopScreenShare />)
 
@@ -143,11 +148,16 @@ function App() {
           })
           .then((newStream) => {
             myVideo.current.srcObject = newStream;
-            //  connectionRef.current.removeTrack(stream.getVideoTracks()[0], stream)
-            connectionRef.current.addTrack(newStream.getVideoTracks()[0], stream);
-            replaceStream(newStream);
+            if (connectionRef.current) {
+              //  connectionRef.current.removeTrack(stream.getVideoTracks()[0], stream)
+              connectionRef.current.addTrack(newStream.getVideoTracks()[0], stream);
+              replaceStream(newStream);
+            }
+            else {
+              setStream(newStream);
+            }
 
-            setStream(newStream);
+            //setStream(newStream);
 
           })
 
@@ -191,23 +201,40 @@ function App() {
   }
 
   const fullScreen = () => {
+
+
+    if (fullScreenMod) {
+      setFullScreenIcon(<BiFullscreen />);
+    }
+    else {
+      setFullScreenIcon(<BiExitFullscreen />)
+    }
+    setFullScreen(!fullScreenMod);
     navigator.mediaDevices
       .getUserMedia({
         video: true,
         audio: true
       })
       .then((stream) => {
-        
+
         myVideo.current.srcObject = stream
 
       })
-    if (fullScreenMod) {
-      setFullScreenIcon(<BiFullscreen/>);
-    } 
-    else {
-      setFullScreenIcon(<BiExitFullscreen/>)
-    }
-    setFullScreen(!fullScreenMod);
+    console.log("setStream");
+  }
+
+  const setVideo = () => {
+    navigator.mediaDevices
+      .getUserMedia({
+        video: true,
+        audio: true
+      })
+      .then((stream) => {
+
+        myVideo.current.srcObject = stream
+
+      })
+    console.log("setVideo");
   }
 
   const muteVideo = () => {
@@ -240,27 +267,30 @@ function App() {
   if (!fullScreenMod) {
     return (
       <>
-
+        {console.log("1")}
         <h1 className="videochat__logo">Video chat</h1>
 
         <div className="container">
           <div className="video-container">
             <div className="videochat">
               <div className="video">
-                {stream && <video id="myVideoStream" playsInline ref={myVideo} muted autoPlay style={{ width: "400px" }} />}
+                {stream && <video id="myVideoStream" playsInline ref={myVideo} muted autoPlay style={{ background: "black", width: "400px" }} />}
 
               </div>
               <div className="video">
                 {callAccepted && !callEnded ?
-                  <video playsInline ref={userVideo} autoPlay style={{ width: "400px" }} /> :
+                  <video id="myVideoStream" playsInline ref={userVideo} autoPlay style={{ width: "400px" }} /> :
                   null}
               </div>
             </div>
             <div className="buttons">
-              <Button variant="contained" color="default" ref={myVideo} onClick={muteVideo} startIcon={videoIcon}></Button>
-              <Button variant="contained" color="default" ref={myVideo} onClick={muteAudio} startIcon={muteIcon}></Button>
-              <Button variant="contained" color="default" ref={myVideo} onClick={showScreen} startIcon={shareIcon}></Button>
-              <Button variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button>
+              <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={muteVideo} startIcon={videoIcon}></Button>
+              <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={muteAudio} startIcon={muteIcon}></Button>
+              <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={showScreen} startIcon={shareIcon}></Button>
+              {/* {callAccepted && !callEnded ? 
+              <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button> :
+              null} */}
+              <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button>
             </div>
           </div>
 
@@ -317,9 +347,11 @@ function App() {
   else {
     return (
       <>
+        {setVideo()}
+
         <div>
           <div className="video">
-            {stream && <video id="myVideoStream" playsInline ref={myVideo} muted autoPlay style={{ width: "400px" }} />}
+            {stream && <video id="myVideoStream" playsInline ref={myVideo} muted style={{ background: "black", width: "400px" }} />}
 
           </div>
           <div className="video">
