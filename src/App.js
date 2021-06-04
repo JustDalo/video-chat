@@ -87,6 +87,7 @@ function App() {
         name: name
       })
     })
+
     peer.on("stream", (stream) => {
       userVideo.current.srcObject = stream
     })
@@ -149,16 +150,12 @@ function App() {
           .then((newStream) => {
             myVideo.current.srcObject = newStream;
             if (connectionRef.current) {
-              //  connectionRef.current.removeTrack(stream.getVideoTracks()[0], stream)
               connectionRef.current.addTrack(newStream.getVideoTracks()[0], stream);
               replaceStream(newStream);
             }
             else {
               setStream(newStream);
             }
-
-            //setStream(newStream);
-
           })
 
 
@@ -198,30 +195,22 @@ function App() {
   const leaveCall = () => {
     setCallEnded(true)
     connectionRef.current.destroy()
+    window.location.reload();
   }
 
+
   const fullScreen = () => {
-
-
     if (fullScreenMod) {
       setFullScreenIcon(<BiFullscreen />);
+   
     }
     else {
       setFullScreenIcon(<BiExitFullscreen />)
+     
     }
     setFullScreen(!fullScreenMod);
-    navigator.mediaDevices
-      .getUserMedia({
-        video: true,
-        audio: true
-      })
-      .then((stream) => {
-
-        myVideo.current.srcObject = stream
-
-      })
-    console.log("setStream");
   }
+
 
   const setVideo = () => {
     navigator.mediaDevices
@@ -265,16 +254,24 @@ function App() {
 
 
   if (!fullScreenMod) {
+
     return (
       <>
-        {console.log("1")}
+        {console.log(myVideo)}
         <h1 className="videochat__logo">Video chat</h1>
 
         <div className="container">
           <div className="video-container">
             <div className="videochat">
               <div className="video">
-                {stream && <video id="myVideoStream" playsInline ref={myVideo} muted autoPlay style={{ background: "black", width: "400px" }} />}
+                {stream && <video
+                  id="myVideoStream"
+                  playsInline
+                  ref={myVideo}
+                  muted
+                  autoPlay="autoplay"
+                  style={{ background: "black", width: "400px" }}
+                />}
 
               </div>
               <div className="video">
@@ -290,7 +287,7 @@ function App() {
               {/* {callAccepted && !callEnded ? 
               <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button> :
               null} */}
-              <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button>
+              {/* <Button id="control__btn" variant="contained" color="default" ref={myVideo} onClick={fullScreen} startIcon={fullScreenIcon}></Button> */}
             </div>
           </div>
 
@@ -344,14 +341,16 @@ function App() {
       </>
     );
   }
+
   else {
     return (
       <>
-        {setVideo()}
+        {console.log(stream.getAudioTracks()[0].enabled)}
+        {console.log(myVideo)}
 
         <div>
           <div className="video">
-            {stream && <video id="myVideoStream" playsInline ref={myVideo} muted style={{ background: "black", width: "400px" }} />}
+            {stream && <video id="myVideoStream" playsInline ref={myVideo} muted style={{ background: "black", width: "1000px" }} />}
 
           </div>
           <div className="video">
